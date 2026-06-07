@@ -117,6 +117,7 @@ function renderTable(rows) {
         <td>${fmtDate(r.lastUsed)}</td>
         <td>
           <div class="table-actions">
+            <button class="icon-btn" data-action="regenerate" data-id="${r.uid}" data-name="${r.name}" title="Regenerate">${SVG.key} Regenerate</button>
             <button class="icon-btn danger" data-action="revoke" data-id="${r.uid}" data-name="${r.name}" title="Revoke">${SVG.trash} Revoke</button>
           </div>
         </td>
@@ -124,6 +125,9 @@ function renderTable(rows) {
     `;
     }).join('');
 
+    tbody.querySelectorAll('[data-action="regenerate"]').forEach(btn => {
+        btn.addEventListener('click', () => regenerateKey(btn.dataset.id, btn.dataset.name));
+    });
     tbody.querySelectorAll('[data-action="revoke"]').forEach(btn => {
         btn.addEventListener('click', () => revokeKey(btn.dataset.id, btn.dataset.name));
     });
@@ -304,6 +308,77 @@ function showKeyReveal(key, name) {
     });
 
     mount.querySelector('#done-btn').addEventListener('click', close);
+}
+
+function regenerateKey(uid, name) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+      <div class="modal modal-white" style="max-width:420px">
+        <div class="modal-header">
+          <span class="modal-title">${SVG.key} Regenerate API Key</span>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-msg">Regenerate <strong>${name}</strong>?</p>
+          <p class="confirm-sub">The current key will be revoked and a new one issued with the same settings.</p>
+          <div class="form-group" style="margin-top:14px">
+            <label class="form-label">Your Password *</label>
+            <input type="password" class="form-input" id="regen-password" placeholder="Enter your password to confirm" autocomplete="current-password" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="icon-btn" id="regen-cancel">Cancel</button>
+          <button class="icon-btn primary" id="regen-confirm">${SVG.key} Regenerate</button>
+        </div>
+      </div>
+    `;
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.classList.add('open'));
+
+        const passwordInput = overlay.querySelector('#regen-password');
+        const confirmBtn = overlay.querySelector('#regen-confirm');
+        const cancelBtn = overlay.querySelector('#regen-cancel');
+
+        passwordInput.focus();
+
+        const close = () => {
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 200);
+            resolve();
+        };
+
+        cancelBtn.addEventListener('click', close);
+        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+        });
+
+        const doRegen = async () => {
+            const password = passwordInput.value;
+            if (!password) { passwordInput.focus(); return; }
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = `${SVG.loader} Regenerating…`;
+            try {
+                const data = await apiFetch(`/api/db/apikeys?id=${uid}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ password }),
+                });
+                overlay.classList.remove('open');
+                setTimeout(() => overlay.remove(), 200);
+                resolve();
+                loadTable();
+                showKeyReveal(data.key, data.name);
+            } catch (err) {
+                toast(err.message, 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = `${SVG.key} Regenerate`;
+            }
+        };
+
+        confirmBtn.addEventListener('click', doRegen);
+        passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') doRegen(); });
+    });
 }
 
 function revokeKey(uid, name) {

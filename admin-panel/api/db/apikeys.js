@@ -130,6 +130,51 @@ export default async function handler(req, res) {
         return res.status(204).end();
     }
 
+    // REGENERATE
+    if (req.method === 'PATCH' && id) {
+        const { password } = req.body || {};
+        if (!password) return res.status(400).json({ error: 'Password is required' });
+
+        const { data: users } = await supabase
+            .from('mrtinfo_users')
+            .select('password_hash')
+            .eq('id', user.id)
+            .limit(1);
+
+        if (!users?.length) return res.status(401).json({ error: 'User not found' });
+        const validPw = await bcrypt.compare(password, users[0].password_hash);
+        if (!validPw) return res.status(401).json({ error: 'Incorrect password' });
+
+        const { data: existing, error: fetchErr } = await supabase
+            .from('mrtinfo_apikey')
+            .select('name, "isAdmin", "expiresAt"')
+            .eq('uid', id)
+            .single();
+
+        if (fetchErr || !existing) return res.status(404).json({ error: 'Key not found' });
+
+        const { error: delErr } = await supabase.from('mrtinfo_apikey').delete().eq('uid', id);
+        if (delErr) return res.status(400).json({ error: delErr.message });
+
+        const rawKey = crypto.randomBytes(36).toString('base64url');
+        const salt = crypto.randomBytes(16);
+        const hash = crypto.createHash('sha256').update(rawKey).digest();
+        const lastEight = rawKey.slice(-8);
+
+        const { data, error: insertErr } = await supabase.from('mrtinfo_apikey').insert({
+            name: existing.name,
+            hash: '\\x' + hash.toString('hex'),
+            salt: '\\x' + salt.toString('hex'),
+            lastEight,
+            isAdmin: existing.isAdmin,
+            expiresAt: existing.expiresAt,
+        }).select('uid, name, "lastEight", "isAdmin", "createdAt", "expiresAt"').single();
+
+        if (insertErr) return res.status(400).json({ error: insertErr.message });
+
+        return res.status(201).json({ ...data, key: rawKey });
+    }
+
     return res.status(405).json({
         error: 'Method not allowed'
     });
