@@ -1,10 +1,34 @@
-const CACHE = "mrtinfo-admin-v1";
+const CACHE = "mrtinfo-admin-v2";
 
 const ASSETS = [
   "/",
   "/index.html",
+  "/dashboard.html",
+  "/404.html",
+  "/pages/stations.html",
+  "/pages/platforms.html",
+  "/pages/facilities.html",
+  "/pages/artpieces.html",
+  "/pages/transfers.html",
+  "/pages/apikeys.html",
+
   "/index.css",
+  "/dashboard.css",
+  "/404.css",
+  "/shared/shared.css",
+  "/pages/table.css",
+
   "/index.js",
+  "/dashboard.js",
+  "/shared/shared.js",
+  "/shared/svgs.js",
+  "/pages/stations.js",
+  "/pages/platforms.js",
+  "/pages/facilities.js",
+  "/pages/artpieces.js",
+  "/pages/transfers.js",
+  "/pages/apikeys.js",
+
   "/templateicon1.png",
   "/favicon.ico",
   "/manifest.json"
