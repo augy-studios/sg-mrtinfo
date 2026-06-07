@@ -1,1 +1,1 @@
-// Template
+// Admin Panel
