@@ -241,6 +241,7 @@ export async function apiFetch(url, opts = {}, requireKey = false) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error || `HTTP ${res.status}`);
     }
+    if (res.status === 204) return null;
     return res.json();
 }
 
