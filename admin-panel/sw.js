@@ -3,8 +3,8 @@ const CACHE = "mrtinfo-admin-v1";
 const ASSETS = [
   "/",
   "/index.html",
-  "/style.css",
-  "/script.js",
+  "/index.css",
+  "/index.js",
   "/templateicon1.png",
   "/favicon.ico",
   "/manifest.json"
