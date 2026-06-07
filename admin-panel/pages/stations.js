@@ -18,7 +18,7 @@ document.getElementById('topbar-mount').innerHTML = buildTopbar();
 document.getElementById('sidebar-mount').innerHTML = buildSidebar('stations');
 initTopbar();
 
-// ── Page init ─────────────────────────────────────────────────
+// ── Page init
 const PAGE_SIZE = 20;
 let page = 0;
 let total = 0;
@@ -124,7 +124,7 @@ function renderTable(rows) {
     </tr>
   `).join('');
 
-    // Row data cache for edit
+    // edit row lookup
     tbody.querySelectorAll('[data-action="edit"]').forEach(btn => {
         btn.addEventListener('click', () => {
             const row = rows.find(r => r.uid === btn.dataset.id);
@@ -157,7 +157,7 @@ function renderPagination() {
     });
 }
 
-// ── Modal ─────────────────────────────────────────────────────
+// ── Modal
 function openModal(row) {
     const isEdit = !!row;
     const mount = document.getElementById('modal-mount');
@@ -255,7 +255,6 @@ function openModal(row) {
 
     requestAnimationFrame(() => mount.querySelector('#modal-overlay').classList.add('open'));
 
-    // Tags inputs
     const tagsFields = {
         allCodes: createTagsInput(document.getElementById('tags-allCodes'), row?.allCodes || []),
         allLines: createTagsInput(document.getElementById('tags-allLines'), row?.allLines || []),
@@ -280,7 +279,6 @@ function openModal(row) {
         if (e.target === mount.querySelector('#modal-overlay')) close();
     });
 
-    // Escape key
     const escHandler = e => {
         if (e.key === 'Escape') {
             close();
@@ -289,7 +287,6 @@ function openModal(row) {
     };
     document.addEventListener('keydown', escHandler);
 
-    // Save
     const saveBtn = mount.querySelector('#modal-save');
     const doSave = async () => {
         const name_en = document.getElementById('f-name_en').value.trim();

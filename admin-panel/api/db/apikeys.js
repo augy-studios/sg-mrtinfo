@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         });
     }
 
-    // LIST — never return hash/salt
+    // LIST
     if (req.method === 'GET' && !id) {
         const {
             from,
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         });
     }
 
-    // CREATE — generate a new key
+    // CREATE
     if (req.method === 'POST') {
         const {
             name,
@@ -82,8 +82,7 @@ export default async function handler(req, res) {
         const validPw = await bcrypt.compare(password, users[0].password_hash);
         if (!validPw) return res.status(401).json({ error: 'Incorrect password' });
 
-        // Generate a cryptographically random key
-        const rawKey = crypto.randomBytes(36).toString('base64url'); // 48-char URL-safe string
+        const rawKey = crypto.randomBytes(36).toString('base64url'); // 48-char URL-safe
         const salt = crypto.randomBytes(16);
         const hash = crypto.createHash('sha256').update(rawKey).digest();
         const lastEight = rawKey.slice(-8);
@@ -104,14 +103,14 @@ export default async function handler(req, res) {
             error: error.message
         });
 
-        // Return the raw key ONCE — never stored
+        // raw key returned once, never stored
         return res.status(201).json({
             ...data,
             key: rawKey
         });
     }
 
-    // DELETE (revoke)
+    // DELETE
     if (req.method === 'DELETE' && id) {
         const { password } = req.body || {};
         if (!password) return res.status(400).json({ error: 'Password is required' });

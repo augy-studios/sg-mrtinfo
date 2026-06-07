@@ -7,7 +7,7 @@ import {
 
 loadTheme();
 
-// Redirect if already logged in
+// redirect if logged in
 (async () => {
     try {
         const res = await fetch('/api/auth/me', {
@@ -19,7 +19,7 @@ loadTheme();
     }
 })();
 
-// ── View switching ────────────────────────────────────────────
+// ── View switching
 const loginView = document.getElementById('login-view');
 const registerView = document.getElementById('register-view');
 const successView = document.getElementById('success-view');
@@ -35,7 +35,7 @@ document.getElementById('show-register').addEventListener('click', () => showVie
 document.getElementById('show-login').addEventListener('click', () => showView(loginView));
 document.getElementById('back-to-login').addEventListener('click', () => showView(loginView));
 
-// ── Login ─────────────────────────────────────────────────────
+// ── Login
 const form = document.getElementById('login-form');
 const userEl = document.getElementById('username');
 const passEl = document.getElementById('password');
@@ -98,7 +98,7 @@ userEl.addEventListener('keydown', e => {
     if (e.key === 'Enter') passEl.focus();
 });
 
-// ── Register ──────────────────────────────────────────────────
+// ── Register
 const registerForm = document.getElementById('register-form');
 const regUsernameEl = document.getElementById('reg-username');
 const regEmailEl = document.getElementById('reg-email');

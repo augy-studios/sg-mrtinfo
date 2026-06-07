@@ -2,7 +2,7 @@ import {
     SVG
 } from './svgs.js';
 
-// ── Theme ────────────────────────────────────────────────────
+// ── Theme
 const THEMES = [{
         id: 'classic',
         label: 'Classic',
@@ -96,7 +96,7 @@ export function openThemePicker() {
     });
 }
 
-// ── Toast ─────────────────────────────────────────────────────
+// ── Toast
 let toastContainer = null;
 
 function getToastContainer() {
@@ -122,7 +122,7 @@ export function toast(msg, type = 'info', duration = 3200) {
     }, duration);
 }
 
-// ── API Key Storage ───────────────────────────────────────────
+// ── API Key Storage
 const API_KEY_SESSION = 'mrtinfo-apikey';
 
 export function getStoredApiKey() {
@@ -211,7 +211,7 @@ export function promptApiKey() {
     });
 }
 
-// ── API Fetch Helper ──────────────────────────────────────────
+// ── API Fetch
 export async function apiFetch(url, opts = {}, requireKey = false) {
     const headers = {
         'Content-Type': 'application/json',
@@ -244,7 +244,7 @@ export async function apiFetch(url, opts = {}, requireKey = false) {
     return res.json();
 }
 
-// ── Confirm Modal ─────────────────────────────────────────────
+// ── Confirm Modal
 export function confirm(msg, sub = '') {
     return new Promise(resolve => {
         const overlay = document.createElement('div');
@@ -286,7 +286,7 @@ export function confirm(msg, sub = '') {
     });
 }
 
-// ── Topbar Builder ────────────────────────────────────────────
+// ── Topbar
 export function buildTopbar(username = '') {
     return `
     <nav class="topbar">
@@ -375,7 +375,7 @@ export function initTopbar() {
     }).catch(() => {});
 }
 
-// ── Table Helpers ─────────────────────────────────────────────
+// ── Table Helpers
 export function renderBool(val) {
     return val ?
         `<span class="badge badge-green">${SVG.check} Yes</span>` :
@@ -394,7 +394,7 @@ export function truncate(str, n = 40) {
     return str.length > n ? str.slice(0, n) + '…' : str;
 }
 
-// ── Tags Input ────────────────────────────────────────────────
+// ── Tags Input
 export function createTagsInput(container, initial = []) {
     let tags = [...initial];
 

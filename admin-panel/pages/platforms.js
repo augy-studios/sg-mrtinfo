@@ -74,7 +74,7 @@ document.getElementById('thead').innerHTML = `
   </tr>
 `;
 
-// Load stations for select dropdown
+// station options for select
 async function loadStations() {
     try {
         const data = await apiFetch('/api/db/stations?limit=500');

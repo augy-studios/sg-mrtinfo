@@ -1,4 +1,4 @@
-// Shared helpers for all DB API routes
+// DB route helpers
 import {
     createClient
 } from '@supabase/supabase-js';
@@ -12,7 +12,7 @@ export const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY
 );
 
-// Require session (GET requests) OR session + API key (mutating requests)
+// validate session + optional API key
 export async function requireAuth(req, res, requireKey = false) {
     const user = await getSession(req);
     if (!user) {
@@ -31,8 +31,7 @@ export async function requireAuth(req, res, requireKey = false) {
             return null;
         }
 
-        // API key format: random 32+ byte hex
-        // We store sha256(key) as hash comparison
+        // sha256 hash compare
         const keyHash = crypto.createHash('sha256').update(rawKey).digest();
         const lastEight = rawKey.slice(-8);
 
@@ -51,7 +50,6 @@ export async function requireAuth(req, res, requireKey = false) {
             return null;
         }
 
-        // Compare hash (stored as bytea hex string from postgres)
         const valid = keys.find(k => {
             const stored = Buffer.isBuffer(k.hash) ?
                 k.hash :

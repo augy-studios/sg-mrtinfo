@@ -1,4 +1,3 @@
-// dashboard.js
 import {
     buildTopbar,
     buildSidebar,
@@ -81,7 +80,6 @@ statsGrid.innerHTML = TABLES.map(t => `
         return;
     }
 
-    // Fetch counts in parallel
     await Promise.all(TABLES.map(async t => {
         try {
             const data = await apiFetch(`/api/db/${t.endpoint}?count=1`);

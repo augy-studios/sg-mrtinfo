@@ -150,7 +150,7 @@ function renderPagination() {
     });
 }
 
-// ── Create Modal ──────────────────────────────────────────────
+// ── Create Modal
 function openCreateModal() {
     const mount = document.getElementById('modal-mount');
 
@@ -258,7 +258,7 @@ function openCreateModal() {
     });
 }
 
-// ── Key Reveal Modal (once) ───────────────────────────────────
+// ── Key Reveal Modal
 function showKeyReveal(key, name) {
     const mount = document.getElementById('modal-mount');
 

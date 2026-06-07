@@ -46,7 +46,6 @@ export default async function handler(req, res) {
         error: 'Invalid credentials'
     });
 
-    // Create session
     const token = crypto.randomBytes(48).toString('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
 
