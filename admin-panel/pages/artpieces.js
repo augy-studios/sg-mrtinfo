@@ -256,7 +256,7 @@ function openModal(row) {
         saveBtn.innerHTML = `${SVG.loader} Saving…`;
         try {
             if (isEdit) {
-                await apiFetch(`/api/db/artpieces/${row.uid}`, {
+                await apiFetch(`/api/db/artpieces?id=${row.uid}`, {
                     method: 'PATCH',
                     body: JSON.stringify(payload)
                 }, true);
@@ -284,7 +284,7 @@ async function deleteRow(uid) {
     const ok = await confirmDialog('Delete this art piece?');
     if (!ok) return;
     try {
-        await apiFetch(`/api/db/artpieces/${uid}`, {
+        await apiFetch(`/api/db/artpieces?id=${uid}`, {
             method: 'DELETE'
         }, true);
         toast('Art piece deleted.', 'success');

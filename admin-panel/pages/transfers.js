@@ -275,7 +275,7 @@ function openModal(row) {
         saveBtn.innerHTML = `${SVG.loader} Saving…`;
         try {
             if (isEdit) {
-                await apiFetch(`/api/db/transfers/${row.uid}`, {
+                await apiFetch(`/api/db/transfers?id=${row.uid}`, {
                     method: 'PATCH',
                     body: JSON.stringify(payload)
                 }, true);
@@ -303,7 +303,7 @@ async function deleteRow(uid) {
     const ok = await confirmDialog('Delete this transfer?');
     if (!ok) return;
     try {
-        await apiFetch(`/api/db/transfers/${uid}`, {
+        await apiFetch(`/api/db/transfers?id=${uid}`, {
             method: 'DELETE'
         }, true);
         toast('Transfer deleted.', 'success');

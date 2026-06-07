@@ -272,7 +272,7 @@ function openModal(row) {
         saveBtn.innerHTML = `${SVG.loader} Saving…`;
         try {
             if (isEdit) {
-                await apiFetch(`/api/db/platforms/${row.uid}`, {
+                await apiFetch(`/api/db/platforms?id=${row.uid}`, {
                     method: 'PATCH',
                     body: JSON.stringify(payload)
                 }, true);
@@ -303,7 +303,7 @@ async function deleteRow(uid) {
     const ok = await confirmDialog('Delete this platform?', 'All related facilities will also be deleted.');
     if (!ok) return;
     try {
-        await apiFetch(`/api/db/platforms/${uid}`, {
+        await apiFetch(`/api/db/platforms?id=${uid}`, {
             method: 'DELETE'
         }, true);
         toast('Platform deleted.', 'success');

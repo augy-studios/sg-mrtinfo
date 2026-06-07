@@ -247,7 +247,7 @@ function openModal(row) {
         saveBtn.innerHTML = `${SVG.loader} Saving…`;
         try {
             if (isEdit) {
-                await apiFetch(`/api/db/facilities/${row.uid}`, {
+                await apiFetch(`/api/db/facilities?id=${row.uid}`, {
                     method: 'PATCH',
                     body: JSON.stringify(payload)
                 }, true);
@@ -275,7 +275,7 @@ async function deleteRow(uid) {
     const ok = await confirmDialog('Delete this facility?');
     if (!ok) return;
     try {
-        await apiFetch(`/api/db/facilities/${uid}`, {
+        await apiFetch(`/api/db/facilities?id=${uid}`, {
             method: 'DELETE'
         }, true);
         toast('Facility deleted.', 'success');
