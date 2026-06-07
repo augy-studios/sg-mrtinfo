@@ -1,0 +1,13 @@
+{
+    "name": "admin-mrtinfo",
+    "version": "1.0.0",
+    "private": true,
+    "description": "SG MRT Info Admin Panel",
+    "dependencies": {
+        "@supabase/supabase-js": "^2.39.0",
+        "bcryptjs": "^2.4.3"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}

@@ -1,0 +1,82 @@
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text);
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-card-icon {
+    opacity: 0.6;
+}
+
+.stat-card-count {
+    font-size: 32px;
+    line-height: 1;
+    color: var(--text);
+}
+
+.stat-card-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.welcome-card {
+    padding: 24px;
+}
+
+.welcome-card h2 {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.welcome-card p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.welcome-shortcuts {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.shortcut-key {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    background: rgba(0, 0, 0, 0.07);
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--text);
+    white-space: nowrap;
+}
