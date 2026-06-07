@@ -7,8 +7,7 @@ import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
-    const needsKey = req.method === 'DELETE';
-    const user = await requireAuth(req, res, needsKey);
+    const user = await requireAuth(req, res, false);
     if (!user) return;
 
     if (!user.is_admin) {
@@ -114,12 +113,21 @@ export default async function handler(req, res) {
 
     // DELETE (revoke)
     if (req.method === 'DELETE' && id) {
-        const {
-            error
-        } = await supabase.from('mrtinfo_apikey').delete().eq('uid', id);
-        if (error) return res.status(400).json({
-            error: error.message
-        });
+        const { password } = req.body || {};
+        if (!password) return res.status(400).json({ error: 'Password is required' });
+
+        const { data: users } = await supabase
+            .from('mrtinfo_users')
+            .select('password_hash')
+            .eq('id', user.id)
+            .limit(1);
+
+        if (!users?.length) return res.status(401).json({ error: 'User not found' });
+        const validPw = await bcrypt.compare(password, users[0].password_hash);
+        if (!validPw) return res.status(401).json({ error: 'Incorrect password' });
+
+        const { error } = await supabase.from('mrtinfo_apikey').delete().eq('uid', id);
+        if (error) return res.status(400).json({ error: error.message });
         return res.status(204).end();
     }
 

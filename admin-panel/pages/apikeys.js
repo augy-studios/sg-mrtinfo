@@ -4,7 +4,6 @@ import {
     initTopbar,
     apiFetch,
     toast,
-    confirm as confirmDialog,
     renderBool,
 } from '../shared/shared.js';
 import {
@@ -118,7 +117,7 @@ function renderTable(rows) {
         <td>${fmtDate(r.lastUsed)}</td>
         <td>
           <div class="table-actions">
-            <button class="icon-btn danger" data-action="revoke" data-id="${r.uid}" title="Revoke">${SVG.trash} Revoke</button>
+            <button class="icon-btn danger" data-action="revoke" data-id="${r.uid}" data-name="${r.name}" title="Revoke">${SVG.trash} Revoke</button>
           </div>
         </td>
       </tr>
@@ -126,7 +125,7 @@ function renderTable(rows) {
     }).join('');
 
     tbody.querySelectorAll('[data-action="revoke"]').forEach(btn => {
-        btn.addEventListener('click', () => revokeKey(btn.dataset.id));
+        btn.addEventListener('click', () => revokeKey(btn.dataset.id, btn.dataset.name));
     });
 }
 
@@ -281,7 +280,7 @@ function showKeyReveal(key, name) {
           </button>
         </div>
         <div class="modal-footer">
-          <button class="icon-btn primary" id="done-btn">${SVG.check} Done, I've copied it</button>
+          <button class="icon-btn primary" id="done-btn">${SVG.check} I confirm that I have saved the API key safely</button>
         </div>
       </div>
     </div>
@@ -307,16 +306,73 @@ function showKeyReveal(key, name) {
     mount.querySelector('#done-btn').addEventListener('click', close);
 }
 
-async function revokeKey(uid) {
-    const ok = await confirmDialog('Revoke this API key?', 'Any scripts using it will stop working.');
-    if (!ok) return;
-    try {
-        await apiFetch(`/api/db/apikeys/${uid}`, {
-            method: 'DELETE'
-        }, true);
-        toast('API key revoked.', 'success');
-        loadTable();
-    } catch (err) {
-        toast(err.message, 'error');
-    }
+function revokeKey(uid, name) {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.innerHTML = `
+      <div class="modal modal-white" style="max-width:420px">
+        <div class="modal-header">
+          <span class="modal-title">${SVG.warning} Revoke API Key</span>
+        </div>
+        <div class="modal-body">
+          <p class="confirm-msg">Revoke <strong>${name}</strong>?</p>
+          <p class="confirm-sub">Any scripts using it will stop working immediately.</p>
+          <div class="form-group" style="margin-top:14px">
+            <label class="form-label">Your Password *</label>
+            <input type="password" class="form-input" id="revoke-password" placeholder="Enter your password to confirm" autocomplete="current-password" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="icon-btn" id="revoke-cancel">Cancel</button>
+          <button class="icon-btn danger" id="revoke-confirm">${SVG.trash} Revoke</button>
+        </div>
+      </div>
+    `;
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.classList.add('open'));
+
+        const passwordInput = overlay.querySelector('#revoke-password');
+        const confirmBtn = overlay.querySelector('#revoke-confirm');
+        const cancelBtn = overlay.querySelector('#revoke-cancel');
+
+        passwordInput.focus();
+
+        const close = () => {
+            overlay.classList.remove('open');
+            setTimeout(() => overlay.remove(), 200);
+            resolve();
+        };
+
+        cancelBtn.addEventListener('click', close);
+        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', function esc(e) {
+            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+        });
+
+        const doRevoke = async () => {
+            const password = passwordInput.value;
+            if (!password) { passwordInput.focus(); return; }
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = `${SVG.loader} Revoking…`;
+            try {
+                await apiFetch(`/api/db/apikeys?id=${uid}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ password }),
+                });
+                overlay.classList.remove('open');
+                setTimeout(() => overlay.remove(), 200);
+                resolve();
+                toast('API key revoked.', 'success');
+                loadTable();
+            } catch (err) {
+                toast(err.message, 'error');
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = `${SVG.trash} Revoke`;
+            }
+        };
+
+        confirmBtn.addEventListener('click', doRevoke);
+        passwordInput.addEventListener('keydown', e => { if (e.key === 'Enter') doRevoke(); });
+    });
 }
