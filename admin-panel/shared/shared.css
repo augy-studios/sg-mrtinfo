@@ -383,6 +383,10 @@ body {
     box-shadow: var(--shadow);
 }
 
+.table-scroll {
+    overflow-x: auto;
+}
+
 .table-wrap table {
     width: 100%;
     border-collapse: collapse;
