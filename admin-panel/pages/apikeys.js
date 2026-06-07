@@ -19,6 +19,20 @@ const PAGE_SIZE = 20;
 let page = 0,
     total = 0;
 
+(async () => {
+    try {
+        const user = await apiFetch('/api/auth/me');
+        if (!user.is_admin) {
+            window.location.href = '/dashboard.html';
+            return;
+        }
+    } catch {
+        window.location.href = '/index.html';
+        return;
+    }
+    loadTable();
+})();
+
 document.getElementById('page-title').innerHTML = `${SVG.key} API Keys`;
 document.getElementById('new-btn').innerHTML = `${SVG.plus} Generate Key`;
 document.getElementById('new-btn').addEventListener('click', () => openCreateModal());
@@ -162,6 +176,11 @@ function openCreateModal() {
             <input type="checkbox" id="cb-isAdmin" />
             Admin key (can manage users and API keys)
           </label>
+          <div class="form-group" style="margin-top:16px">
+            <label class="form-label">Your Password *</label>
+            <input type="password" class="form-input" id="f-password" placeholder="Enter your password to confirm" autocomplete="current-password" />
+            <p class="form-hint">Required to authorise key generation.</p>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="icon-btn" id="modal-cancel">Cancel</button>
@@ -200,8 +219,14 @@ function openCreateModal() {
         const name = nameInput.value.trim();
         const expires = mount.querySelector('#f-expires').value;
         const isAdmin = mount.querySelector('#cb-isAdmin').checked;
+        const password = mount.querySelector('#f-password').value;
         if (!name) {
             toast('Name is required.', 'error');
+            return;
+        }
+        if (!password) {
+            toast('Password is required.', 'error');
+            mount.querySelector('#f-password').focus();
             return;
         }
 
@@ -213,9 +238,10 @@ function openCreateModal() {
                 body: JSON.stringify({
                     name,
                     isAdmin,
-                    expiresAt: expires || null
+                    expiresAt: expires || null,
+                    password,
                 }),
-            }, true);
+            });
 
             close();
             showKeyReveal(data.key, data.name);
@@ -294,5 +320,3 @@ async function revokeKey(uid) {
         toast(err.message, 'error');
     }
 }
-
-loadTable();

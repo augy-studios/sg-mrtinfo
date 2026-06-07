@@ -234,7 +234,8 @@ export async function apiFetch(url, opts = {}, requireKey = false) {
     }
     if (res.status === 403) {
         clearStoredApiKey();
-        throw new Error('Invalid API key');
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Forbidden');
     }
     if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -367,6 +368,11 @@ export function initTopbar() {
         clearStoredApiKey();
         window.location.href = '/index.html';
     });
+    apiFetch('/api/auth/me').then(user => {
+        if (!user.is_admin) {
+            document.querySelector('a.sidebar-link[href="/pages/apikeys.html"]')?.remove();
+        }
+    }).catch(() => {});
 }
 
 // ── Table Helpers ─────────────────────────────────────────────

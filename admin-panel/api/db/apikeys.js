@@ -4,11 +4,16 @@ import {
     paginate
 } from './_middleware.js';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 export default async function handler(req, res) {
-    const needsKey = ['POST', 'DELETE'].includes(req.method);
+    const needsKey = req.method === 'DELETE';
     const user = await requireAuth(req, res, needsKey);
     if (!user) return;
+
+    if (!user.is_admin) {
+        return res.status(403).json({ error: 'Admin access required' });
+    }
 
     const {
         id
@@ -62,11 +67,21 @@ export default async function handler(req, res) {
         const {
             name,
             isAdmin = false,
-            expiresAt = null
+            expiresAt = null,
+            password,
         } = req.body || {};
-        if (!name) return res.status(400).json({
-            error: 'Name is required'
-        });
+        if (!name) return res.status(400).json({ error: 'Name is required' });
+        if (!password) return res.status(400).json({ error: 'Password is required' });
+
+        const { data: users } = await supabase
+            .from('mrtinfo_users')
+            .select('password_hash')
+            .eq('id', user.id)
+            .limit(1);
+
+        if (!users?.length) return res.status(401).json({ error: 'User not found' });
+        const validPw = await bcrypt.compare(password, users[0].password_hash);
+        if (!validPw) return res.status(401).json({ error: 'Incorrect password' });
 
         // Generate a cryptographically random key
         const rawKey = crypto.randomBytes(36).toString('base64url'); // 48-char URL-safe string
