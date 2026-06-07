@@ -96,3 +96,37 @@
   color: var(--text-muted);
   margin-top: 20px;
 }
+
+.login-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--brand-dark);
+  font-family: 'Jua', sans-serif;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.login-link:hover {
+  opacity: 0.75;
+}
+
+.form-muted {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.register-success {
+  background: var(--success-bg);
+  border: 1px solid #9ae6b4;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  color: var(--success);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

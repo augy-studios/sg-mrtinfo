@@ -55,29 +55,78 @@
                 <span class="login-sub">Admin Panel</span>
             </div>
 
-            <form id="login-form" novalidate autocomplete="on">
-                <div class="form-group">
-                    <label class="form-label" for="username">Username or Email</label>
-                    <input type="text" class="form-input" id="username" name="username" autocomplete="username"
-                        placeholder="your_username" required />
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="password">Password</label>
-                    <div class="form-input-wrap">
-                        <input type="password" class="form-input" id="password" name="password"
-                            autocomplete="current-password" placeholder="••••••••••" required />
-                        <button type="button" class="form-input-icon" id="toggle-pw"></button>
+            <!-- Login View -->
+            <div id="login-view">
+                <form id="login-form" novalidate autocomplete="on">
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username</label>
+                        <input type="text" class="form-input" id="username" name="username" autocomplete="username"
+                            placeholder="your_username" required />
                     </div>
-                </div>
-                <div id="login-error" class="login-error" style="display:none"></div>
-                <button type="submit" class="icon-btn primary login-btn" id="submit-btn">
-                    Sign In
-                </button>
-            </form>
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="form-input-wrap">
+                            <input type="password" class="form-input" id="password" name="password"
+                                autocomplete="current-password" placeholder="••••••••••" required />
+                            <button type="button" class="form-input-icon" id="toggle-pw"></button>
+                        </div>
+                    </div>
+                    <div id="login-error" class="login-error" style="display:none"></div>
+                    <button type="submit" class="icon-btn primary login-btn" id="submit-btn">
+                        Sign In
+                    </button>
+                </form>
+                <p class="login-footer">
+                    Don't have an account? <button type="button" class="login-link" id="show-register">Register an account.</button>
+                </p>
+            </div>
 
-            <p class="login-footer">
-                Don't have an account? Contact the administrator.
-            </p>
+            <!-- Register View -->
+            <div id="register-view" style="display:none">
+                <form id="register-form" novalidate autocomplete="off">
+                    <div class="form-group">
+                        <label class="form-label" for="reg-username">Username</label>
+                        <input type="text" class="form-input" id="reg-username" name="username"
+                            autocomplete="username" placeholder="your_username" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-display-name">Display Name <span class="form-muted">(optional)</span></label>
+                        <input type="text" class="form-input" id="reg-display-name" name="display_name"
+                            placeholder="Your Name" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-password">Password</label>
+                        <div class="form-input-wrap">
+                            <input type="password" class="form-input" id="reg-password" name="password"
+                                autocomplete="new-password" placeholder="••••••••••" required />
+                            <button type="button" class="form-input-icon" id="toggle-reg-pw"></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="reg-confirm">Confirm Password</label>
+                        <input type="password" class="form-input" id="reg-confirm" name="confirm_password"
+                            autocomplete="new-password" placeholder="••••••••••" required />
+                    </div>
+                    <div id="register-error" class="login-error" style="display:none"></div>
+                    <button type="submit" class="icon-btn primary login-btn" id="register-btn">
+                        Register
+                    </button>
+                </form>
+                <p class="login-footer">
+                    Already have an account? <button type="button" class="login-link" id="show-login">Sign in.</button>
+                </p>
+            </div>
+
+            <!-- Success View -->
+            <div id="success-view" style="display:none">
+                <div class="register-success">
+                    <p>Your account request has been submitted.</p>
+                    <p>Access is subject to admin approval. You'll be able to sign in once your account is approved.</p>
+                </div>
+                <p class="login-footer">
+                    <button type="button" class="login-link" id="back-to-login">Back to sign in.</button>
+                </p>
+            </div>
         </div>
     </div>
 

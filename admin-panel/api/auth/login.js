@@ -22,14 +22,13 @@ export default async function handler(req, res) {
         error: 'Missing credentials'
     });
 
-    // Look up by username OR email
     const {
         data: users,
         error
     } = await supabase
         .from('mrtinfo_users')
-        .select('id, username, display_name, email, password_hash, is_approved, is_admin')
-        .or(`username.eq.${username},email.eq.${username}`)
+        .select('id, username, display_name, password_hash, is_approved, is_admin')
+        .eq('username', username)
         .limit(1);
 
     if (error || !users?.length) return res.status(401).json({
@@ -71,6 +70,6 @@ export default async function handler(req, res) {
         id: user.id,
         username: user.username,
         display_name: user.display_name,
-        is_admin: user.is_admin,
+        is_admin: user.is_admin
     });
 }
