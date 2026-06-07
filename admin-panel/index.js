@@ -101,10 +101,12 @@ userEl.addEventListener('keydown', e => {
 // ── Register ──────────────────────────────────────────────────
 const registerForm = document.getElementById('register-form');
 const regUsernameEl = document.getElementById('reg-username');
+const regEmailEl = document.getElementById('reg-email');
 const regDisplayEl = document.getElementById('reg-display-name');
 const regPassEl = document.getElementById('reg-password');
 const regConfirmEl = document.getElementById('reg-confirm');
 const toggleRegPw = document.getElementById('toggle-reg-pw');
+const toggleRegConfirm = document.getElementById('toggle-reg-confirm');
 const registerErrorEl = document.getElementById('register-error');
 const registerBtn = document.getElementById('register-btn');
 
@@ -116,16 +118,25 @@ toggleRegPw.addEventListener('click', () => {
     toggleRegPw.innerHTML = regPwVisible ? SVG.eyeOff : SVG.eye;
 });
 
+toggleRegConfirm.innerHTML = SVG.eye;
+let regConfirmVisible = false;
+toggleRegConfirm.addEventListener('click', () => {
+    regConfirmVisible = !regConfirmVisible;
+    regConfirmEl.type = regConfirmVisible ? 'text' : 'password';
+    toggleRegConfirm.innerHTML = regConfirmVisible ? SVG.eyeOff : SVG.eye;
+});
+
 registerForm.addEventListener('submit', async e => {
     e.preventDefault();
     registerErrorEl.style.display = 'none';
 
     const username = regUsernameEl.value.trim();
+    const email = regEmailEl.value.trim();
     const display_name = regDisplayEl.value.trim();
     const password = regPassEl.value;
     const confirm = regConfirmEl.value;
 
-    if (!username || !password || !confirm) {
+    if (!username || !email || !password || !confirm) {
         showRegisterError('Please fill in all required fields.');
         return;
     }
@@ -145,7 +156,7 @@ registerForm.addEventListener('submit', async e => {
         const res = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, display_name, password }),
+            body: JSON.stringify({ username, email, display_name, password }),
         });
 
         const data = await res.json();

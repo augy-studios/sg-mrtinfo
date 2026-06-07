@@ -15,11 +15,12 @@ export default async function handler(req, res) {
 
     const {
         username,
+        email,
         display_name,
         password
     } = req.body || {};
 
-    if (!username || !password) return res.status(400).json({
+    if (!username || !email || !password) return res.status(400).json({
         error: 'Missing required fields'
     });
 
@@ -35,13 +36,15 @@ export default async function handler(req, res) {
         data: existing
     } = await supabase
         .from('mrtinfo_users')
-        .select('id')
-        .eq('username', username)
+        .select('id, username, email')
+        .or(`username.eq.${username},email.eq.${email}`)
         .limit(1);
 
-    if (existing?.length) return res.status(409).json({
-        error: 'Username already taken'
-    });
+    if (existing?.length) {
+        const taken = existing[0];
+        const field = taken.username === username ? 'Username' : 'Email';
+        return res.status(409).json({ error: `${field} already taken` });
+    }
 
     const password_hash = await bcrypt.hash(password, 12);
 
@@ -49,15 +52,19 @@ export default async function handler(req, res) {
         error
     } = await supabase.from('mrtinfo_users').insert({
         username,
+        email,
         display_name: display_name?.trim() || username,
         password_hash,
         is_approved: false,
         is_admin: false
     });
 
-    if (error) return res.status(500).json({
-        error: 'Registration failed'
-    });
+    if (error) {
+        console.error('register insert error:', error);
+        return res.status(500).json({
+            error: 'Registration failed'
+        });
+    }
 
     return res.status(201).json({
         message: 'Registration submitted'
