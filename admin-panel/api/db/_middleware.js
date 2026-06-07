@@ -75,9 +75,7 @@ export async function requireAuth(req, res, requireKey = false) {
 
         // Update lastUsed
         await supabase.from('mrtinfo_apikey')
-            .update({
-                '"lastUsed"': new Date().toISOString()
-            })
+            .update({ lastUsed: new Date().toISOString() })
             .eq('uid', valid.uid);
     }
 

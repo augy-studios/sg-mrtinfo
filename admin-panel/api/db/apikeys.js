@@ -94,11 +94,11 @@ export default async function handler(req, res) {
             error
         } = await supabase.from('mrtinfo_apikey').insert({
             name,
-            hash,
-            salt,
-            '"lastEight"': lastEight,
-            '"isAdmin"': isAdmin,
-            '"expiresAt"': expiresAt,
+            hash: '\\x' + hash.toString('hex'),
+            salt: '\\x' + salt.toString('hex'),
+            lastEight,
+            isAdmin,
+            expiresAt,
         }).select('uid, name, "lastEight", "isAdmin", "createdAt", "expiresAt"').single();
 
         if (error) return res.status(400).json({
