@@ -19,6 +19,10 @@
     -webkit-backdrop-filter: blur(var(--blur));
 }
 
+.table-scroll {
+    overflow-x: auto;
+}
+
 .td-mono {
     font-family: 'Courier New', monospace;
     font-size: 12px;
