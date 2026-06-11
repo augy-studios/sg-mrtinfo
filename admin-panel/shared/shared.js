@@ -291,18 +291,19 @@ export function confirm(msg, sub = '') {
 export function buildTopbar(username = '') {
     return `
     <nav class="topbar">
+      <button class="icon-btn hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar">${SVG.hamburger}</button>
       <a class="topbar-brand" href="/dashboard.html">
         <span class="brand-dot"></span>
-        MRT Info Admin
+        <span class="btn-text">MRT Info Admin</span>
       </a>
       <div class="topbar-spacer"></div>
       <div class="topbar-actions">
-        ${username ? `<span style="font-size:13px;color:var(--text-muted)">${username}</span>` : ''}
+        ${username ? `<span class="btn-text" style="font-size:13px;color:var(--text-muted);white-space:nowrap">${username}</span>` : ''}
         <a class="icon-btn" href="https://donate.stripe.com/28o2akeAr3hv0DK6oo" target="_blank" rel="noopener">
-          ${SVG.coffee} Buy Augy a Coffee
+          ${SVG.coffee} <span class="btn-text">Buy Augy a Coffee</span>
         </a>
-        <button class="icon-btn" id="theme-btn">${SVG.palette} Theme</button>
-        <button class="icon-btn" id="logout-btn">${SVG.logout} Logout</button>
+        <button class="icon-btn" id="theme-btn">${SVG.palette} <span class="btn-text">Theme</span></button>
+        <button class="icon-btn" id="logout-btn">${SVG.logout} <span class="btn-text">Logout</span></button>
       </div>
     </nav>
   `;
@@ -369,6 +370,32 @@ export function initTopbar() {
         clearStoredApiKey();
         window.location.href = '/index.html';
     });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+
+    function openSidebar() {
+        document.querySelector('.sidebar')?.classList.add('open');
+        overlay.classList.add('open');
+    }
+
+    function closeSidebar() {
+        document.querySelector('.sidebar')?.classList.remove('open');
+        overlay.classList.remove('open');
+    }
+
+    document.querySelector('#hamburger-btn')?.addEventListener('click', () => {
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar?.classList.contains('open')) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+    });
+
+    overlay.addEventListener('click', closeSidebar);
+
     apiFetch('/api/auth/me').then(user => {
         if (!user.is_admin) {
             document.querySelector('a.sidebar-link[href="/pages/apikeys.html"]')?.remove();

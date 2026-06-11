@@ -241,6 +241,28 @@ body {
     flex-shrink: 0;
 }
 
+.hamburger-btn {
+    display: none;
+    flex-shrink: 0;
+    padding: 7px 10px;
+}
+
+/* ── Sidebar Overlay ──────────────────────────────────────── */
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 89;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 /* ── Sidebar ──────────────────────────────────────────────── */
 .sidebar {
     position: fixed;
@@ -863,8 +885,30 @@ body {
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 768px) {
-    .sidebar {
+    .hamburger-btn {
+        display: inline-flex;
+    }
+
+    .topbar {
+        overflow-x: auto;
+        padding: 0 12px;
+    }
+
+    .topbar-spacer {
+        flex: 0 0 8px;
+    }
+
+    .btn-text {
         display: none;
+    }
+
+    .sidebar {
+        transform: translateX(-220px);
+        transition: transform 0.25s ease;
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
     }
 
     .main {
