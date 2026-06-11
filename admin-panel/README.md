@@ -1,6 +1,6 @@
 # Singapore MRT Info — Admin Panel
 
-A Progressive Web App (PWA) for managing the data behind [Singapore MRT Info](https://mrtinfo.sg).
+The definitive Singapore MRT Info admin panel for managing stations, platforms, facilities, art pieces, and transfers.
 
 ## Features
 

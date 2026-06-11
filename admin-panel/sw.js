@@ -1,4 +1,4 @@
-const CACHE = "mrtinfo-admin-v19";
+const CACHE = "mrtinfo-admin-v20";
 
 const ASSETS = [
   "/",

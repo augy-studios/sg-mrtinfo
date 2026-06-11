@@ -1,7 +1,7 @@
 {
     "name": "Singapore MRT Info Admin Panel",
     "short_name": "SGMRT Admin Panel",
-    "description": "A simple template app; view live template at a glance!",
+    "description": "The definitive Singapore MRT Info admin panel for managing stations, platforms, facilities, art pieces, and transfers.",
     "icons": [{
             "src": "SGMIA-192.png",
             "type": "image/png",
