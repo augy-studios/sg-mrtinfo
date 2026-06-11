@@ -8,6 +8,7 @@ import {
     renderBool,
     truncate,
     createTagsInput,
+    openFilterModal,
 } from '../shared/shared.js';
 import {
     SVG
@@ -22,10 +23,22 @@ let page = 0,
     total = 0,
     search = '';
 let stationOptions = [];
+let activeFilters = {
+    sortBy: '', sortDir: 'asc',
+    indoors: null, coveredwalkway: null,
+};
 
 document.getElementById('page-title').innerHTML = `${SVG.transfer} Transfers`;
 document.getElementById('new-btn').innerHTML = `${SVG.plus} New Transfer`;
 document.getElementById('new-btn').addEventListener('click', () => openModal(null));
+
+// Filter button
+const filterBtn = document.createElement('button');
+filterBtn.className = 'icon-btn';
+filterBtn.id = 'filter-btn';
+filterBtn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>`;
+document.getElementById('search-wrap').parentElement.insertBefore(filterBtn, document.getElementById('search-wrap'));
+filterBtn.addEventListener('click', openFiltersModal);
 
 const searchWrap = document.getElementById('search-wrap');
 searchWrap.innerHTML = `${SVG.search}<input id="search-input" placeholder="Search stations…" />`;
@@ -85,15 +98,92 @@ async function loadStations() {
     }
 }
 
+function countActiveFilters() {
+    let n = 0;
+    if (activeFilters.sortBy) n++;
+    if (activeFilters.indoors !== null) n++;
+    if (activeFilters.coveredwalkway !== null) n++;
+    return n;
+}
+
+function updateFilterBtn() {
+    const btn = document.getElementById('filter-btn');
+    if (!btn) return;
+    const count = countActiveFilters();
+    btn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>${count > 0 ? `<span class="filter-pill">${count}</span>` : ''}`;
+}
+
+function openFiltersModal() {
+    const f = activeFilters;
+    const showDir = !!f.sortBy;
+    openFilterModal({
+        title: 'Transfer Filters',
+        buildBody: () => `
+        <div class="filter-section">
+          <div class="filter-section-title">Sort By</div>
+          <div class="filter-sort-row">
+            <select class="form-select" id="fil-sortBy">
+              <option value="" ${f.sortBy === '' ? 'selected' : ''}>Default order</option>
+              <option value="from_name" ${f.sortBy === 'from_name' ? 'selected' : ''}>From</option>
+              <option value="to_name" ${f.sortBy === 'to_name' ? 'selected' : ''}>To</option>
+              <option value="duration" ${f.sortBy === 'duration' ? 'selected' : ''}>Duration</option>
+              <option value="trafficLight" ${f.sortBy === 'trafficLight' ? 'selected' : ''}>Traffic Lights</option>
+              <option value="overheadBridge" ${f.sortBy === 'overheadBridge' ? 'selected' : ''}>Overhead Bridges</option>
+            </select>
+          </div>
+          <div class="filter-chips filter-radio" id="fil-sortDir-wrap" style="${showDir ? '' : 'display:none'}">
+            <div class="filter-chip${f.sortDir === 'asc' ? ' active' : ''}" data-value="asc">↑ Ascending</div>
+            <div class="filter-chip${f.sortDir === 'desc' ? ' active' : ''}" data-value="desc">↓ Descending</div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Indoors</div>
+          <div class="filter-chips filter-radio" id="fil-indoors">
+            <div class="filter-chip${f.indoors === null ? ' active' : ''}" data-value="">All</div>
+            <div class="filter-chip${f.indoors === true ? ' active' : ''}" data-value="true">Yes</div>
+            <div class="filter-chip${f.indoors === false ? ' active' : ''}" data-value="false">No</div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Covered Walkway</div>
+          <div class="filter-chips filter-radio" id="fil-covered">
+            <div class="filter-chip${f.coveredwalkway === null ? ' active' : ''}" data-value="">All</div>
+            <div class="filter-chip${f.coveredwalkway === true ? ' active' : ''}" data-value="true">Yes</div>
+            <div class="filter-chip${f.coveredwalkway === false ? ' active' : ''}" data-value="false">No</div>
+          </div>
+        </div>`,
+        onApply: async (close) => {
+            const sortBy = document.getElementById('fil-sortBy').value;
+            const sortDir = document.querySelector('#fil-sortDir-wrap .filter-chip.active')?.dataset.value || 'asc';
+            const indoorsRaw = document.querySelector('#fil-indoors .filter-chip.active')?.dataset.value ?? '';
+            const coveredRaw = document.querySelector('#fil-covered .filter-chip.active')?.dataset.value ?? '';
+            activeFilters = {
+                sortBy, sortDir,
+                indoors: indoorsRaw === '' ? null : indoorsRaw === 'true',
+                coveredwalkway: coveredRaw === '' ? null : coveredRaw === 'true',
+            };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+            close();
+        },
+        onReset: () => {
+            activeFilters = { sortBy: '', sortDir: 'asc', indoors: null, coveredwalkway: null };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+        },
+    });
+}
+
 async function loadTable() {
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = `<tr class="loading-row"><td colspan="7">${SVG.loader} Loading…</td></tr>`;
     try {
-        const qs = new URLSearchParams({
-            page,
-            limit: PAGE_SIZE,
-            search
-        });
+        const qs = new URLSearchParams({ page, limit: PAGE_SIZE, search });
+        if (activeFilters.sortBy) { qs.set('sortBy', activeFilters.sortBy); qs.set('sortDir', activeFilters.sortDir); }
+        if (activeFilters.indoors !== null) qs.set('indoors', String(activeFilters.indoors));
+        if (activeFilters.coveredwalkway !== null) qs.set('coveredwalkway', String(activeFilters.coveredwalkway));
         const data = await apiFetch(`/api/db/transfers?${qs}`);
         total = data.total || 0;
         renderTable(data.rows || []);

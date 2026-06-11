@@ -8,6 +8,7 @@ import {
     renderArray,
     truncate,
     createTagsInput,
+    openFilterModal,
 } from '../shared/shared.js';
 import {
     SVG
@@ -22,10 +23,22 @@ let page = 0,
     total = 0,
     search = '';
 let stationOptions = [];
+let activeFilters = {
+    sortBy: '', sortDir: 'asc',
+    types: [],
+};
 
 document.getElementById('page-title').innerHTML = `${SVG.art} Art Pieces`;
 document.getElementById('new-btn').innerHTML = `${SVG.plus} New Art Piece`;
 document.getElementById('new-btn').addEventListener('click', () => openModal(null));
+
+// Filter button
+const filterBtn = document.createElement('button');
+filterBtn.className = 'icon-btn';
+filterBtn.id = 'filter-btn';
+filterBtn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>`;
+document.getElementById('search-wrap').parentElement.insertBefore(filterBtn, document.getElementById('search-wrap'));
+filterBtn.addEventListener('click', openFiltersModal);
 
 const searchWrap = document.getElementById('search-wrap');
 searchWrap.innerHTML = `${SVG.search}<input id="search-input" placeholder="Search title, artist…" />`;
@@ -84,15 +97,74 @@ async function loadStations() {
     }
 }
 
+function countActiveFilters() {
+    let n = 0;
+    if (activeFilters.sortBy) n++;
+    if (activeFilters.types.length) n++;
+    return n;
+}
+
+function updateFilterBtn() {
+    const btn = document.getElementById('filter-btn');
+    if (!btn) return;
+    const count = countActiveFilters();
+    btn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>${count > 0 ? `<span class="filter-pill">${count}</span>` : ''}`;
+}
+
+function openFiltersModal() {
+    const f = activeFilters;
+    const showDir = !!f.sortBy;
+    const TYPES = ['mural', 'painting', 'sculpture'];
+    openFilterModal({
+        title: 'Art Piece Filters',
+        buildBody: () => `
+        <div class="filter-section">
+          <div class="filter-section-title">Sort By</div>
+          <div class="filter-sort-row">
+            <select class="form-select" id="fil-sortBy">
+              <option value="" ${f.sortBy === '' ? 'selected' : ''}>Default order</option>
+              <option value="title" ${f.sortBy === 'title' ? 'selected' : ''}>Title</option>
+              <option value="station_name" ${f.sortBy === 'station_name' ? 'selected' : ''}>Station</option>
+              <option value="location" ${f.sortBy === 'location' ? 'selected' : ''}>Location</option>
+            </select>
+          </div>
+          <div class="filter-chips filter-radio" id="fil-sortDir-wrap" style="${showDir ? '' : 'display:none'}">
+            <div class="filter-chip${f.sortDir === 'asc' ? ' active' : ''}" data-value="asc">↑ Ascending</div>
+            <div class="filter-chip${f.sortDir === 'desc' ? ' active' : ''}" data-value="desc">↓ Descending</div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Type</div>
+          <div class="filter-chips filter-multi" id="fil-types">
+            ${TYPES.map(t => `<div class="filter-chip${f.types.includes(t) ? ' active' : ''}" data-value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</div>`).join('')}
+          </div>
+        </div>`,
+        onApply: async (close) => {
+            const sortBy = document.getElementById('fil-sortBy').value;
+            const sortDir = document.querySelector('#fil-sortDir-wrap .filter-chip.active')?.dataset.value || 'asc';
+            const types = [...document.querySelectorAll('#fil-types .filter-chip.active')].map(el => el.dataset.value);
+            activeFilters = { sortBy, sortDir, types };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+            close();
+        },
+        onReset: () => {
+            activeFilters = { sortBy: '', sortDir: 'asc', types: [] };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+        },
+    });
+}
+
 async function loadTable() {
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = `<tr class="loading-row"><td colspan="6">${SVG.loader} Loading…</td></tr>`;
     try {
-        const qs = new URLSearchParams({
-            page,
-            limit: PAGE_SIZE,
-            search
-        });
+        const qs = new URLSearchParams({ page, limit: PAGE_SIZE, search });
+        if (activeFilters.sortBy) { qs.set('sortBy', activeFilters.sortBy); qs.set('sortDir', activeFilters.sortDir); }
+        if (activeFilters.types.length) qs.set('types', activeFilters.types.join(','));
         const data = await apiFetch(`/api/db/artpieces?${qs}`);
         total = data.total || 0;
         renderTable(data.rows || []);

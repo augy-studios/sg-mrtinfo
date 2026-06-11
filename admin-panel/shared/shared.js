@@ -403,6 +403,89 @@ export function initTopbar() {
     }).catch(() => {});
 }
 
+// ── Filter Modal
+export function openFilterModal({ title, buildBody, onApply, onReset }) {
+    const mount = document.getElementById('modal-mount');
+    mount.innerHTML = `
+    <div class="modal-overlay" id="filter-modal-overlay">
+      <div class="modal" style="max-width:460px">
+        <div class="modal-header">
+          <span class="modal-title">${SVG.filter} ${title}</span>
+          <button class="icon-btn" id="filter-modal-close">${SVG.close}</button>
+        </div>
+        <div class="modal-body">
+          ${buildBody()}
+        </div>
+        <div class="modal-footer" style="justify-content:space-between">
+          <button class="icon-btn" id="filter-modal-reset">${SVG.close} Reset</button>
+          <div style="display:flex;gap:8px">
+            <button class="icon-btn" id="filter-modal-cancel">Cancel</button>
+            <button class="icon-btn primary" id="filter-modal-apply">${SVG.check} Apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+    // Wire radio chip groups (single-select)
+    mount.querySelectorAll('.filter-chips.filter-radio').forEach(group => {
+        group.addEventListener('click', e => {
+            const chip = e.target.closest('.filter-chip');
+            if (!chip) return;
+            group.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        });
+    });
+
+    // Wire multi chip groups (toggle)
+    mount.querySelectorAll('.filter-chips.filter-multi').forEach(group => {
+        group.addEventListener('click', e => {
+            const chip = e.target.closest('.filter-chip');
+            if (chip) chip.classList.toggle('active');
+        });
+    });
+
+    // Show/hide sort direction when Sort By changes
+    const sortByEl = mount.querySelector('#fil-sortBy');
+    if (sortByEl) {
+        const syncDir = () => {
+            const dirWrap = mount.querySelector('#fil-sortDir-wrap');
+            if (dirWrap) dirWrap.style.display = (sortByEl.value && sortByEl.value !== 'near') ? '' : 'none';
+        };
+        sortByEl.addEventListener('change', syncDir);
+    }
+
+    requestAnimationFrame(() => mount.querySelector('#filter-modal-overlay').classList.add('open'));
+
+    const close = () => {
+        const ov = mount.querySelector('#filter-modal-overlay');
+        if (ov) ov.classList.remove('open');
+        setTimeout(() => { mount.innerHTML = ''; }, 200);
+    };
+
+    mount.querySelector('#filter-modal-close').addEventListener('click', close);
+    mount.querySelector('#filter-modal-cancel').addEventListener('click', close);
+    mount.querySelector('#filter-modal-overlay').addEventListener('click', e => {
+        if (e.target === mount.querySelector('#filter-modal-overlay')) close();
+    });
+    const escH = e => { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', escH); } };
+    document.addEventListener('keydown', escH);
+
+    mount.querySelector('#filter-modal-reset').addEventListener('click', () => { onReset(); close(); });
+
+    mount.querySelector('#filter-modal-apply').addEventListener('click', async () => {
+        const btn = mount.querySelector('#filter-modal-apply');
+        btn.disabled = true;
+        btn.innerHTML = `${SVG.loader} Applying…`;
+        try {
+            await onApply(close);
+        } catch {
+            btn.disabled = false;
+            btn.innerHTML = `${SVG.check} Apply`;
+        }
+    });
+}
+
 // ── Table Helpers
 export function renderBool(val) {
     return val ?

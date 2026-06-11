@@ -9,6 +9,7 @@ import {
     renderArray,
     truncate,
     createTagsInput,
+    openFilterModal,
 } from '../shared/shared.js';
 import {
     SVG
@@ -23,10 +24,24 @@ let page = 0,
     total = 0,
     search = '';
 let stationOptions = [];
+let availableLines = [];
+let activeFilters = {
+    sortBy: '', sortDir: 'asc',
+    lines: [],
+    isOpen: null,
+};
 
 document.getElementById('page-title').innerHTML = `${SVG.platform} Platforms`;
 document.getElementById('new-btn').innerHTML = `${SVG.plus} New Platform`;
 document.getElementById('new-btn').addEventListener('click', () => openModal(null));
+
+// Filter button
+const filterBtn = document.createElement('button');
+filterBtn.className = 'icon-btn';
+filterBtn.id = 'filter-btn';
+filterBtn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>`;
+document.getElementById('search-wrap').parentElement.insertBefore(filterBtn, document.getElementById('search-wrap'));
+filterBtn.addEventListener('click', openFiltersModal);
 
 const searchWrap = document.getElementById('search-wrap');
 searchWrap.innerHTML = `${SVG.search}<input id="search-input" placeholder="Search by code or line…" />`;
@@ -87,6 +102,91 @@ async function loadStations() {
     }
 }
 
+async function loadAvailableLines() {
+    try {
+        const data = await apiFetch('/api/db/platforms?limit=2000');
+        const set = new Set((data.rows || []).map(p => p.line).filter(Boolean));
+        availableLines = [...set].sort();
+    } catch { availableLines = []; }
+}
+
+function countActiveFilters() {
+    let n = 0;
+    if (activeFilters.sortBy) n++;
+    if (activeFilters.lines.length) n++;
+    if (activeFilters.isOpen !== null) n++;
+    return n;
+}
+
+function updateFilterBtn() {
+    const btn = document.getElementById('filter-btn');
+    if (!btn) return;
+    const count = countActiveFilters();
+    btn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>${count > 0 ? `<span class="filter-pill">${count}</span>` : ''}`;
+}
+
+function openFiltersModal() {
+    const f = activeFilters;
+    const showDir = f.sortBy && f.sortBy !== 'near';
+    openFilterModal({
+        title: 'Platform Filters',
+        buildBody: () => `
+        <div class="filter-section">
+          <div class="filter-section-title">Sort By</div>
+          <div class="filter-sort-row">
+            <select class="form-select" id="fil-sortBy">
+              <option value="" ${f.sortBy === '' ? 'selected' : ''}>Default order</option>
+              <option value="station_name" ${f.sortBy === 'station_name' ? 'selected' : ''}>Station</option>
+              <option value="code" ${f.sortBy === 'code' ? 'selected' : ''}>Code</option>
+              <option value="line" ${f.sortBy === 'line' ? 'selected' : ''}>Line</option>
+              <option value="order" ${f.sortBy === 'order' ? 'selected' : ''}>Order</option>
+              <option value="direction" ${f.sortBy === 'direction' ? 'selected' : ''}>Direction</option>
+            </select>
+          </div>
+          <div class="filter-chips filter-radio" id="fil-sortDir-wrap" style="${showDir ? '' : 'display:none'}">
+            <div class="filter-chip${f.sortDir === 'asc' ? ' active' : ''}" data-value="asc">↑ Ascending</div>
+            <div class="filter-chip${f.sortDir === 'desc' ? ' active' : ''}" data-value="desc">↓ Descending</div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Lines</div>
+          <div class="filter-chips filter-multi" id="fil-lines">
+            ${availableLines.length === 0
+                ? '<span style="color:var(--text-muted);font-size:13px">Loading…</span>'
+                : availableLines.map(l => `<div class="filter-chip${f.lines.includes(l) ? ' active' : ''}" data-value="${l}">${l}</div>`).join('')}
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Open</div>
+          <div class="filter-chips filter-radio" id="fil-isOpen">
+            <div class="filter-chip${f.isOpen === null ? ' active' : ''}" data-value="">All</div>
+            <div class="filter-chip${f.isOpen === true ? ' active' : ''}" data-value="true">Yes</div>
+            <div class="filter-chip${f.isOpen === false ? ' active' : ''}" data-value="false">No</div>
+          </div>
+        </div>`,
+        onApply: async (close) => {
+            const sortBy = document.getElementById('fil-sortBy').value;
+            const sortDir = document.querySelector('#fil-sortDir-wrap .filter-chip.active')?.dataset.value || 'asc';
+            const lines = [...document.querySelectorAll('#fil-lines .filter-chip.active')].map(el => el.dataset.value);
+            const isOpenRaw = document.querySelector('#fil-isOpen .filter-chip.active')?.dataset.value ?? '';
+            activeFilters = {
+                sortBy, sortDir, lines,
+                isOpen: isOpenRaw === '' ? null : isOpenRaw === 'true',
+            };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+            close();
+        },
+        onReset: () => {
+            activeFilters = { sortBy: '', sortDir: 'asc', lines: [], isOpen: null };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+        },
+    });
+}
+
 async function loadTable() {
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = `<tr class="loading-row"><td colspan="7">${SVG.loader} Loading…</td></tr>`;
@@ -96,6 +196,9 @@ async function loadTable() {
             limit: PAGE_SIZE,
             search
         });
+        if (activeFilters.sortBy) { qs.set('sortBy', activeFilters.sortBy); qs.set('sortDir', activeFilters.sortDir); }
+        if (activeFilters.lines.length) qs.set('lines', activeFilters.lines.join(','));
+        if (activeFilters.isOpen !== null) qs.set('isOpen', String(activeFilters.isOpen));
         const data = await apiFetch(`/api/db/platforms?${qs}`);
         total = data.total || 0;
         renderTable(data.rows || []);
@@ -313,4 +416,5 @@ async function deleteRow(uid) {
     }
 }
 
+loadAvailableLines();
 loadStations().then(loadTable);

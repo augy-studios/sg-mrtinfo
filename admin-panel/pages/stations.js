@@ -9,6 +9,7 @@ import {
     renderArray,
     truncate,
     createTagsInput,
+    openFilterModal,
 } from '../shared/shared.js';
 import {
     SVG
@@ -23,10 +24,25 @@ const PAGE_SIZE = 20;
 let page = 0;
 let total = 0;
 let search = '';
+let availableLines = [];
+let activeFilters = {
+    sortBy: '', sortDir: 'asc',
+    lines: [],
+    isOpen: null, isInterchange: null,
+    nearLat: null, nearLng: null,
+};
 
 document.getElementById('page-title').innerHTML = `${SVG.station} Stations`;
 document.getElementById('new-btn').innerHTML = `${SVG.plus} New Station`;
 document.getElementById('new-btn').addEventListener('click', () => openModal(null));
+
+// Filter button
+const filterBtn = document.createElement('button');
+filterBtn.className = 'icon-btn';
+filterBtn.id = 'filter-btn';
+filterBtn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>`;
+document.getElementById('search-wrap').parentElement.insertBefore(filterBtn, document.getElementById('search-wrap'));
+filterBtn.addEventListener('click', openFiltersModal);
 
 // Search
 const searchWrap = document.getElementById('search-wrap');
@@ -77,6 +93,116 @@ document.getElementById('thead').innerHTML = `
   </tr>
 `;
 
+async function loadAvailableLines() {
+    try {
+        const data = await apiFetch('/api/db/stations?limit=1000');
+        const set = new Set();
+        (data.rows || []).forEach(s => (s.allLines || []).forEach(l => set.add(l)));
+        availableLines = [...set].sort();
+    } catch { availableLines = []; }
+}
+
+function countActiveFilters() {
+    let n = 0;
+    if (activeFilters.sortBy) n++;
+    if (activeFilters.lines.length) n++;
+    if (activeFilters.isOpen !== null) n++;
+    if (activeFilters.isInterchange !== null) n++;
+    if (activeFilters.nearLat !== null) n++;
+    return n;
+}
+
+function updateFilterBtn() {
+    const btn = document.getElementById('filter-btn');
+    if (!btn) return;
+    const count = countActiveFilters();
+    btn.innerHTML = `${SVG.filter}<span class="btn-text"> Filters</span>${count > 0 ? `<span class="filter-pill">${count}</span>` : ''}`;
+}
+
+function openFiltersModal() {
+    const f = activeFilters;
+    const showDir = f.sortBy && f.sortBy !== 'near';
+    openFilterModal({
+        title: 'Station Filters',
+        buildBody: () => `
+        <div class="filter-section">
+          <div class="filter-section-title">Sort By</div>
+          <div class="filter-sort-row">
+            <select class="form-select" id="fil-sortBy">
+              <option value="" ${f.sortBy === '' ? 'selected' : ''}>Default order</option>
+              <option value="name_en" ${f.sortBy === 'name_en' ? 'selected' : ''}>Name (EN)</option>
+              <option value="allCodes" ${f.sortBy === 'allCodes' ? 'selected' : ''}>Codes</option>
+              <option value="near" ${f.sortBy === 'near' ? 'selected' : ''}>Nearest to me</option>
+            </select>
+          </div>
+          <div class="filter-chips filter-radio" id="fil-sortDir-wrap" style="${showDir ? '' : 'display:none'}">
+            <div class="filter-chip${f.sortDir === 'asc' ? ' active' : ''}" data-value="asc">↑ Ascending</div>
+            <div class="filter-chip${f.sortDir === 'desc' ? ' active' : ''}" data-value="desc">↓ Descending</div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Lines</div>
+          <div class="filter-chips filter-multi" id="fil-lines">
+            ${availableLines.length === 0
+                ? '<span style="color:var(--text-muted);font-size:13px">Loading…</span>'
+                : availableLines.map(l => `<div class="filter-chip${f.lines.includes(l) ? ' active' : ''}" data-value="${l}">${l}</div>`).join('')}
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Open</div>
+          <div class="filter-chips filter-radio" id="fil-isOpen">
+            <div class="filter-chip${f.isOpen === null ? ' active' : ''}" data-value="">All</div>
+            <div class="filter-chip${f.isOpen === true ? ' active' : ''}" data-value="true">Yes</div>
+            <div class="filter-chip${f.isOpen === false ? ' active' : ''}" data-value="false">No</div>
+          </div>
+        </div>
+        <div class="filter-section">
+          <div class="filter-section-title">Interchange</div>
+          <div class="filter-chips filter-radio" id="fil-isInterchange">
+            <div class="filter-chip${f.isInterchange === null ? ' active' : ''}" data-value="">All</div>
+            <div class="filter-chip${f.isInterchange === true ? ' active' : ''}" data-value="true">Yes</div>
+            <div class="filter-chip${f.isInterchange === false ? ' active' : ''}" data-value="false">No</div>
+          </div>
+        </div>`,
+        onApply: async (close) => {
+            const sortBy = document.getElementById('fil-sortBy').value;
+            const sortDir = document.querySelector('#fil-sortDir-wrap .filter-chip.active')?.dataset.value || 'asc';
+            const lines = [...document.querySelectorAll('#fil-lines .filter-chip.active')].map(el => el.dataset.value);
+            const isOpenRaw = document.querySelector('#fil-isOpen .filter-chip.active')?.dataset.value ?? '';
+            const isIntRaw = document.querySelector('#fil-isInterchange .filter-chip.active')?.dataset.value ?? '';
+            let nearLat = null, nearLng = null;
+            if (sortBy === 'near') {
+                try {
+                    const pos = await new Promise((res, rej) =>
+                        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000 })
+                    );
+                    nearLat = pos.coords.latitude;
+                    nearLng = pos.coords.longitude;
+                } catch {
+                    toast('Could not get your location. Please allow location access.', 'error');
+                    return;
+                }
+            }
+            activeFilters = {
+                sortBy, sortDir, lines,
+                isOpen: isOpenRaw === '' ? null : isOpenRaw === 'true',
+                isInterchange: isIntRaw === '' ? null : isIntRaw === 'true',
+                nearLat, nearLng,
+            };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+            close();
+        },
+        onReset: () => {
+            activeFilters = { sortBy: '', sortDir: 'asc', lines: [], isOpen: null, isInterchange: null, nearLat: null, nearLng: null };
+            page = 0;
+            loadTable();
+            updateFilterBtn();
+        },
+    });
+}
+
 async function loadTable() {
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = `<tr class="loading-row"><td colspan="7">${SVG.loader} Loading…</td></tr>`;
@@ -86,6 +212,17 @@ async function loadTable() {
             limit: PAGE_SIZE,
             search
         });
+        if (activeFilters.sortBy && activeFilters.sortBy !== 'near') {
+            qs.set('sortBy', activeFilters.sortBy);
+            qs.set('sortDir', activeFilters.sortDir);
+        }
+        if (activeFilters.lines.length) qs.set('lines', activeFilters.lines.join(','));
+        if (activeFilters.isOpen !== null) qs.set('isOpen', String(activeFilters.isOpen));
+        if (activeFilters.isInterchange !== null) qs.set('isInterchange', String(activeFilters.isInterchange));
+        if (activeFilters.nearLat !== null) {
+            qs.set('nearLat', String(activeFilters.nearLat));
+            qs.set('nearLng', String(activeFilters.nearLng));
+        }
         const data = await apiFetch(`/api/db/stations?${qs}`);
         total = data.total || 0;
         renderTable(data.rows || []);
@@ -362,4 +499,5 @@ async function deleteRow(uid) {
     }
 }
 
+loadAvailableLines();
 loadTable();
