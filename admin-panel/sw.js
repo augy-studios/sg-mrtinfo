@@ -29,7 +29,7 @@ const ASSETS = [
   "/pages/transfers.js",
   "/pages/apikeys.js",
 
-  "/templateicon1.png",
+  "/SGMIA-main.png",
   "/favicon.ico",
   "/manifest.json"
 ];

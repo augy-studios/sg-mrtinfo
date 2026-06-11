@@ -3,10 +3,16 @@
     "short_name": "SGMRT Admin Panel",
     "description": "A simple template app; view live template at a glance!",
     "icons": [{
-        "src": "templateicon1.png",
-        "type": "image/png",
-        "sizes": "512x512"
-    }],
+            "src": "SGMIA-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "SGMIA-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        }
+    ],
     "screenshots": [{
             "src": "/images/screenshot_1.png",
             "type": "image/png",
@@ -16,7 +22,7 @@
         {
             "src": "/images/screenshot_2.png",
             "type": "image/png",
-            "sizes": "1920x988",
+            "sizes": "1920x1080",
             "form_factor": "wide"
         }
     ],
