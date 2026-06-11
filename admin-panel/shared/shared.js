@@ -537,11 +537,13 @@ export function createTagsInput(container, initial = []) {
                 if (val && !tags.includes(val)) {
                     tags.push(val);
                     render();
+                    container.querySelector('.tags-input-bare').focus();
                 } else inp.value = '';
             }
             if (e.key === 'Backspace' && !inp.value && tags.length) {
                 tags.pop();
                 render();
+                container.querySelector('.tags-input-bare').focus();
             }
         });
         container.addEventListener('click', () => container.querySelector('.tags-input-bare')?.focus());

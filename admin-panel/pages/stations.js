@@ -434,6 +434,10 @@ function openModal(row) {
             close();
             document.removeEventListener('keydown', escHandler);
         }
+        if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            doSave();
+        }
     };
     document.addEventListener('keydown', escHandler);
 

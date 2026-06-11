@@ -345,6 +345,10 @@ function openModal(row) {
             close();
             document.removeEventListener('keydown', escH);
         }
+        if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            doSave();
+        }
     };
     document.addEventListener('keydown', escH);
 
