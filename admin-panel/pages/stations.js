@@ -25,6 +25,7 @@ let page = 0;
 let total = 0;
 let search = '';
 let availableLines = [];
+let userCoords = null; // cached after first successful geolocation grant
 let activeFilters = {
     sortBy: '', sortDir: 'asc',
     lines: [],
@@ -172,16 +173,28 @@ function openFiltersModal() {
             const isIntRaw = document.querySelector('#fil-isInterchange .filter-chip.active')?.dataset.value ?? '';
             let nearLat = null, nearLng = null;
             if (sortBy === 'near') {
-                try {
-                    const pos = await new Promise((res, rej) =>
-                        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000 })
-                    );
-                    nearLat = pos.coords.latitude;
-                    nearLng = pos.coords.longitude;
-                } catch {
-                    toast('Could not get your location. Please allow location access.', 'error');
-                    return;
+                if (!userCoords) {
+                    try {
+                        const pos = await new Promise((res, rej) =>
+                            navigator.geolocation.getCurrentPosition(res, rej, {
+                                enableHighAccuracy: false,
+                                timeout: 30000,
+                                maximumAge: 300000,
+                            })
+                        );
+                        userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    } catch (err) {
+                        const msg = err?.code === 1
+                            ? 'Location permission denied. Please allow location in your browser settings.'
+                            : err?.code === 2
+                            ? 'Location unavailable. Check your device location settings.'
+                            : 'Location request timed out. Please try again.';
+                        toast(msg, 'error');
+                        return;
+                    }
                 }
+                nearLat = userCoords.lat;
+                nearLng = userCoords.lng;
             }
             activeFilters = {
                 sortBy, sortDir, lines,

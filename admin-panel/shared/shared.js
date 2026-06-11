@@ -479,9 +479,12 @@ export function openFilterModal({ title, buildBody, onApply, onReset }) {
         btn.innerHTML = `${SVG.loader} Applying…`;
         try {
             await onApply(close);
-        } catch {
-            btn.disabled = false;
-            btn.innerHTML = `${SVG.check} Apply`;
+        } finally {
+            // Re-enable if the modal is still open (onApply returned early without closing)
+            if (mount.querySelector('#filter-modal-overlay')?.classList.contains('open')) {
+                btn.disabled = false;
+                btn.innerHTML = `${SVG.check} Apply`;
+            }
         }
     });
 }
