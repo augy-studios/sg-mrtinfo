@@ -25,6 +25,7 @@ let page = 0;
 let total = 0;
 let search = '';
 let availableLines = [];
+let isAdmin = false;
 let userCoords = null; // cached after first successful geolocation grant
 let activeFilters = {
     sortBy: '', sortDir: 'asc',
@@ -268,7 +269,7 @@ function renderTable(rows) {
       <td>
         <div class="table-actions">
           <button class="icon-btn" data-action="edit" data-id="${r.uid}" title="Edit">${SVG.edit}</button>
-          <button class="icon-btn danger" data-action="delete" data-id="${r.uid}" title="Delete">${SVG.trash}</button>
+          ${isAdmin ? `<button class="icon-btn danger" data-action="delete" data-id="${r.uid}" title="Delete">${SVG.trash}</button>` : ''}
         </div>
       </td>
     </tr>
@@ -516,5 +517,8 @@ async function deleteRow(uid) {
     }
 }
 
-loadAvailableLines();
-loadTable();
+(async () => {
+    try { isAdmin = (await apiFetch('/api/auth/me')).is_admin ?? false; } catch {}
+    loadAvailableLines();
+    loadTable();
+})();

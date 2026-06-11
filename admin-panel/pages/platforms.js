@@ -23,6 +23,7 @@ const PAGE_SIZE = 20;
 let page = 0,
     total = 0,
     search = '';
+let isAdmin = false;
 let stationOptions = [];
 let availableLines = [];
 let activeFilters = {
@@ -226,7 +227,7 @@ function renderTable(rows) {
       <td>
         <div class="table-actions">
           <button class="icon-btn" data-action="edit" data-id="${r.uid}" title="Edit">${SVG.edit}</button>
-          <button class="icon-btn danger" data-action="delete" data-id="${r.uid}" title="Delete">${SVG.trash}</button>
+          ${isAdmin ? `<button class="icon-btn danger" data-action="delete" data-id="${r.uid}" title="Delete">${SVG.trash}</button>` : ''}
         </div>
       </td>
     </tr>
@@ -420,5 +421,9 @@ async function deleteRow(uid) {
     }
 }
 
-loadAvailableLines();
-loadStations().then(loadTable);
+(async () => {
+    try { isAdmin = (await apiFetch('/api/auth/me')).is_admin ?? false; } catch {}
+    loadAvailableLines();
+    await loadStations();
+    loadTable();
+})();
