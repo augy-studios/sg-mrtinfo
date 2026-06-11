@@ -294,7 +294,7 @@ export function buildTopbar(username = '') {
       <button class="icon-btn hamburger-btn" id="hamburger-btn" aria-label="Toggle sidebar">${SVG.hamburger}</button>
       <a class="topbar-brand" href="/dashboard.html">
         <span class="brand-dot"></span>
-        <span class="btn-text">MRT Info Admin</span>
+        MRT Info Admin
       </a>
       <div class="topbar-spacer"></div>
       <div class="topbar-actions">
