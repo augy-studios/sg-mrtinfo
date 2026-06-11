@@ -26,41 +26,44 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET' && !id) {
-        const {
-            from,
-            to,
-            page
-        } = paginate(req.query);
+        const { from, to, page } = paginate(req.query);
         const search = req.query.search || '';
+        const sortBy = req.query.sortBy || '';
+        const ascending = req.query.sortDir !== 'desc';
+        const lines = req.query.lines ? req.query.lines.split(',').filter(Boolean) : [];
+        const isOpen = 'isOpen' in req.query ? req.query.isOpen === 'true' : null;
+        const jsSort = sortBy === 'station_name';
 
         let q = supabase
             .from('mrtinfo_platforms')
-            .select(`*, mrtinfo_stations!mrtinfo_platforms_station_fkey(name_en)`, {
-                count: 'exact'
-            })
-            .range(from, to)
-            .order('line').order('order');
+            .select(`*, mrtinfo_stations!mrtinfo_platforms_station_fkey(name_en)`, { count: 'exact' });
+        if (!jsSort) q = q.range(from, to);
+
+        if (sortBy && !jsSort) {
+            q = q.order(sortBy, { ascending });
+        } else if (!sortBy) {
+            q = q.order('line').order('order');
+        }
 
         if (search) q = q.or(`code.ilike.%${search}%,line.ilike.%${search}%,direction.ilike.%${search}%`);
+        if (lines.length) q = q.in('line', lines);
+        if (isOpen !== null) q = q.eq('isOpen', isOpen);
 
-        const {
-            data,
-            count,
-            error
-        } = await q;
-        if (error) return res.status(500).json({
-            error: error.message
-        });
+        const { data, count, error } = await q;
+        if (error) return res.status(500).json({ error: error.message });
 
-        const rows = (data || []).map(r => ({
-            ...r,
-            station_name: r.mrtinfo_stations?.name_en,
-        }));
-        return res.json({
-            rows,
-            total: count,
-            page
-        });
+        let rows = (data || []).map(r => ({ ...r, station_name: r.mrtinfo_stations?.name_en }));
+
+        if (jsSort) {
+            rows = rows.sort((a, b) => {
+                const av = (a.station_name || '').toLowerCase();
+                const bv = (b.station_name || '').toLowerCase();
+                return ascending ? av.localeCompare(bv) : bv.localeCompare(av);
+            });
+            rows = rows.slice(from, to + 1);
+        }
+
+        return res.json({ rows, total: count, page });
     }
 
     if (req.method === 'GET' && id) {

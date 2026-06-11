@@ -31,38 +31,45 @@ export default async function handler(req, res) {
 
     // LIST
     if (req.method === 'GET' && !id) {
-        const {
-            page,
-            limit,
-            from,
-            to
-        } = paginate(req.query);
+        const { page, limit, from, to } = paginate(req.query);
         const search = req.query.search || '';
+        const sortBy = req.query.sortBy || '';
+        const ascending = req.query.sortDir !== 'desc';
+        const lines = req.query.lines ? req.query.lines.split(',').filter(Boolean) : [];
+        const isOpen = 'isOpen' in req.query ? req.query.isOpen === 'true' : null;
+        const isInterchange = 'isInterchange' in req.query ? req.query.isInterchange === 'true' : null;
+        const nearLat = 'nearLat' in req.query ? parseFloat(req.query.nearLat) : null;
+        const nearLng = 'nearLng' in req.query ? parseFloat(req.query.nearLng) : null;
+        const isNearSort = sortBy === 'near' && nearLat !== null;
 
-        let q = supabase.from(TABLE)
-            .select('*', {
-                count: 'exact'
-            })
-            .range(from, to)
-            .order('name_en');
+        let q = supabase.from(TABLE).select('*', { count: 'exact' });
+        if (!isNearSort) q = q.range(from, to);
 
-        if (search) {
-            q = q.or(`name_en.ilike.%${search}%,name_cn.ilike.%${search}%`);
+        if (sortBy && sortBy !== 'near') {
+            q = q.order(sortBy, { ascending });
+        } else if (!sortBy) {
+            q = q.order('name_en');
         }
 
-        const {
-            data,
-            count,
-            error
-        } = await q;
-        if (error) return res.status(500).json({
-            error: error.message
-        });
-        return res.json({
-            rows: data,
-            total: count,
-            page
-        });
+        if (search) q = q.or(`name_en.ilike.%${search}%,name_cn.ilike.%${search}%`);
+        if (lines.length) q = q.overlaps('allLines', lines);
+        if (isOpen !== null) q = q.eq('isOpen', isOpen);
+        if (isInterchange !== null) q = q.eq('isInterchange', isInterchange);
+
+        const { data, count, error } = await q;
+        if (error) return res.status(500).json({ error: error.message });
+
+        let rows = data || [];
+        if (isNearSort) {
+            rows = [...rows].sort((a, b) => {
+                const da = Math.pow((a.lat || 0) - nearLat, 2) + Math.pow((a.long || 0) - nearLng, 2);
+                const db = Math.pow((b.lat || 0) - nearLat, 2) + Math.pow((b.long || 0) - nearLng, 2);
+                return da - db;
+            });
+            rows = rows.slice(from, to + 1);
+        }
+
+        return res.json({ rows, total: count, page });
     }
 
     // GET ONE

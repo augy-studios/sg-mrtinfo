@@ -26,41 +26,50 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET' && !id) {
-        const {
-            from,
-            to,
-            page
-        } = paginate(req.query);
+        const { from, to, page } = paginate(req.query);
         const search = req.query.search || '';
+        const sortBy = req.query.sortBy || '';
+        const ascending = req.query.sortDir !== 'desc';
+        const types = req.query.types ? req.query.types.split(',').filter(Boolean) : [];
+        const jsSort = sortBy === 'platform_code' || sortBy === 'doors';
 
         let q = supabase
             .from('mrtinfo_facilities')
-            .select(`*, mrtinfo_platforms!mrtinfo_facilities_platform_fkey(code, line)`, {
-                count: 'exact'
-            })
-            .range(from, to)
-            .order('type');
+            .select(`*, mrtinfo_platforms!mrtinfo_facilities_platform_fkey(code, line)`, { count: 'exact' });
+        if (!jsSort) q = q.range(from, to);
+
+        if (sortBy && !jsSort) {
+            q = q.order(sortBy, { ascending });
+        } else if (!sortBy) {
+            q = q.order('type');
+        }
 
         if (search) q = q.or(`type.ilike.%${search}%,towards.ilike.%${search}%`);
+        if (types.length) q = q.in('type', types);
 
-        const {
-            data,
-            count,
-            error
-        } = await q;
-        if (error) return res.status(500).json({
-            error: error.message
-        });
+        const { data, count, error } = await q;
+        if (error) return res.status(500).json({ error: error.message });
 
-        const rows = (data || []).map(r => ({
+        let rows = (data || []).map(r => ({
             ...r,
             platform_code: r.mrtinfo_platforms ? `${r.mrtinfo_platforms.code}` : null,
         }));
-        return res.json({
-            rows,
-            total: count,
-            page
-        });
+
+        if (jsSort) {
+            rows = rows.sort((a, b) => {
+                if (sortBy === 'doors') {
+                    const av = (a.doors || []).length;
+                    const bv = (b.doors || []).length;
+                    return ascending ? av - bv : bv - av;
+                }
+                const av = (a.platform_code || '').toLowerCase();
+                const bv = (b.platform_code || '').toLowerCase();
+                return ascending ? av.localeCompare(bv) : bv.localeCompare(av);
+            });
+            rows = rows.slice(from, to + 1);
+        }
+
+        return res.json({ rows, total: count, page });
     }
 
     if (req.method === 'GET' && id) {

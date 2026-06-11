@@ -26,44 +26,48 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET' && !id) {
-        const {
-            from,
-            to,
-            page
-        } = paginate(req.query);
+        const { from, to, page } = paginate(req.query);
         const search = req.query.search || '';
+        const sortBy = req.query.sortBy || '';
+        const ascending = req.query.sortDir !== 'desc';
+        const indoors = 'indoors' in req.query ? req.query.indoors === 'true' : null;
+        const coveredwalkway = 'coveredwalkway' in req.query ? req.query.coveredwalkway === 'true' : null;
+        const jsSort = sortBy === 'from_name' || sortBy === 'to_name';
 
         let q = supabase
             .from('mrtinfo_transfers')
-            .select(`
-        *,
-        from_station:mrtinfo_stations!mrtinfo_transfers_from_fkey(name_en),
-        to_station:mrtinfo_stations!mrtinfo_transfers_to_fkey(name_en)
-      `, {
-                count: 'exact'
-            })
-            .range(from, to)
-            .order('duration');
+            .select(`*, from_station:mrtinfo_stations!mrtinfo_transfers_from_fkey(name_en), to_station:mrtinfo_stations!mrtinfo_transfers_to_fkey(name_en)`, { count: 'exact' });
+        if (!jsSort) q = q.range(from, to);
 
-        const {
-            data,
-            count,
-            error
-        } = await q;
-        if (error) return res.status(500).json({
-            error: error.message
-        });
+        if (sortBy && !jsSort) {
+            q = q.order(sortBy, { ascending });
+        } else if (!sortBy) {
+            q = q.order('duration');
+        }
 
-        const rows = (data || []).map(r => ({
+        if (search) q = q.or(`from_station.name_en.ilike.%${search}%,to_station.name_en.ilike.%${search}%`);
+        if (indoors !== null) q = q.eq('indoors', indoors);
+        if (coveredwalkway !== null) q = q.eq('coveredwalkway', coveredwalkway);
+
+        const { data, count, error } = await q;
+        if (error) return res.status(500).json({ error: error.message });
+
+        let rows = (data || []).map(r => ({
             ...r,
             from_name: r.from_station?.name_en,
             to_name: r.to_station?.name_en,
         }));
-        return res.json({
-            rows,
-            total: count,
-            page
-        });
+
+        if (jsSort) {
+            rows = rows.sort((a, b) => {
+                const av = (a[sortBy] || '').toLowerCase();
+                const bv = (b[sortBy] || '').toLowerCase();
+                return ascending ? av.localeCompare(bv) : bv.localeCompare(av);
+            });
+            rows = rows.slice(from, to + 1);
+        }
+
+        return res.json({ rows, total: count, page });
     }
 
     if (req.method === 'GET' && id) {
